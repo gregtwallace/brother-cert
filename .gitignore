@@ -1,0 +1,5 @@
+# ignore test_data folder
+/_test_data
+
+# build folder
+/_out
