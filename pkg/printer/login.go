@@ -22,7 +22,7 @@ func parsePasswordFieldName(bodyBytes []byte) (fieldName string, err error) {
 	// Look for input elements with type="password"
 	// This regex handles both orders: type first or name first
 	// e.g. <input type="password" name="Baf9" ... /> or <input name="Baf9" type="password" ... />
-	regex := regexp.MustCompile(`<input[^>]*(?:type="password"[^>]*name="([^"]*)"[^>]*|name="([^"]*)"[^>]*type="password"[^>]*)>`)
+	regex := regexp.MustCompile(`<input[^>](?:type="password"[^>]+name="([^"]+)"[^>]+|name="([^"]+)"[^>]+type="password"[^>]+)>`)
 	caps := regex.FindStringSubmatch(string(bodyBytes))
 
 	// error if didn't find what was expected
