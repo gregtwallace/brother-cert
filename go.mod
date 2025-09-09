@@ -1,6 +1,6 @@
 module github.com/gregtwallace/brother-cert
 
-go 1.22.1
+go 1.25.1
 
 require (
 	github.com/peterbourgon/ff/v4 v4.0.0-alpha.4
