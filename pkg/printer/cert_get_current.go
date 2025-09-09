@@ -205,6 +205,9 @@ func (p *printer) getCurrentCertIDFromHttpSettings() (id string, name string, er
 // getCurrentCertIDFromCertList performs a tls handshake with the printer to retrieve the
 // current SSL cert. Then it compares the cert used in the handshake against the cert list
 // of the printer in order to determine which is active.
+// NOTE: If there is more than one copy of the active cert on the printer (which is possible
+// if you upload the same cert twice), it is not possible to distinguish which is which and
+// only one will be deleted.
 func (p *printer) getCurrentCertIDFromCertList() (id string, err error) {
 	// use tls handshake to get the serial of the active certificate
 	conf := &tls.Config{
