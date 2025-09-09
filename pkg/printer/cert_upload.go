@@ -37,7 +37,6 @@ func (p *printer) getCertIDs() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", p.userAgent)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -103,7 +102,6 @@ func (p *printer) UploadNewCert(keyPem, certPem []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("User-Agent", p.userAgent)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -196,7 +194,6 @@ func (p *printer) UploadNewCert(keyPem, certPem []byte) (string, error) {
 		return "", err
 	}
 	req.Header.Set("Content-Type", formWriter.FormDataContentType())
-	req.Header.Set("User-Agent", p.userAgent)
 
 	resp, err = p.httpClient.Do(req)
 	if err != nil {

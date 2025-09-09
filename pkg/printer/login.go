@@ -53,7 +53,6 @@ func (p *printer) login(password string) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", p.userAgent)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -85,7 +84,6 @@ func (p *printer) login(password string) error {
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", p.userAgent)
 
 	resp, err = p.httpClient.Do(req)
 	if err != nil {

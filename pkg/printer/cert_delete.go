@@ -56,8 +56,6 @@ func (p *printer) DeleteCert(id string) error {
 	query.Set("idx", id)
 	req.URL.RawQuery = query.Encode()
 
-	req.Header.Set("User-Agent", p.userAgent)
-
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -105,7 +103,6 @@ func (p *printer) DeleteCert(id string) error {
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", p.userAgent)
 
 	resp, err = p.httpClient.Do(req)
 	if err != nil {
@@ -154,7 +151,6 @@ func (p *printer) DeleteCert(id string) error {
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", p.userAgent)
 
 	resp, err = p.httpClient.Do(req)
 	if err != nil {

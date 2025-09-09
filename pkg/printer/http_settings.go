@@ -32,8 +32,6 @@ func (p *printer) getHttpSettings() ([]byte, error) {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", p.userAgent)
-
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -134,7 +132,6 @@ func (p *printer) SetActiveCert(id string) error {
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", p.userAgent)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -181,7 +178,6 @@ func (p *printer) SetActiveCert(id string) error {
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", p.userAgent)
 
 	resp, err = p.httpClient.Do(req)
 	if err != nil {

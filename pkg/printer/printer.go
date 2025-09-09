@@ -10,7 +10,6 @@ import (
 type printer struct {
 	httpClient *http.Client
 	baseUrl    string
-	userAgent  string
 }
 
 // PrinterConfig contains the information necessary to create a printer
@@ -20,6 +19,18 @@ type Config struct {
 	Password  string
 	UserAgent string
 	UseHttp   bool
+}
+
+// custom transport to add User-Agent
+type printerTransport struct {
+	userAgent string
+}
+
+func (trans *printerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// always set user-agent
+	req.Header.Set("User-Agent", trans.userAgent)
+
+	return http.DefaultTransport.RoundTrip(req)
 }
 
 // NewPrinter creates a new printer from a PrinterConfig
@@ -45,11 +56,12 @@ func NewPrinter(cfg Config) (*printer, error) {
 			Jar: jar,
 
 			// set client timeout
-			Timeout:   30 * time.Second,
-			Transport: http.DefaultTransport,
+			Timeout: 30 * time.Second,
+			Transport: &printerTransport{
+				userAgent: cfg.UserAgent,
+			},
 		},
-		baseUrl:   baseUrl,
-		userAgent: cfg.UserAgent,
+		baseUrl: baseUrl,
 	}
 
 	// login & get cookie
