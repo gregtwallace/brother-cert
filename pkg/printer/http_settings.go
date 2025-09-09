@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -57,36 +56,46 @@ func (p *printer) getHttpSettings() ([]byte, error) {
 
 // GetCurrentCertID returns the ID integer and name of the currently selected
 // certificate
-func (p *printer) GetCurrentCertID() (id int, name string, err error) {
+func (p *printer) GetCurrentCertID() (id string, name string, err error) {
 	// GET http settings
 	bodyBytes, err := p.getHttpSettings()
 	if err != nil {
-		return -1, "", err
+		return "", "", err
 	}
 
 	// find the selected cert in the returned html
 	// e.g. `<option value="3" selected="selected">xxx</option>`
-	regex := regexp.MustCompile(`<option\s+?value="(\S*)"\s+?selected="selected">(\S*)<\/option>`)
-	caps := regex.FindStringSubmatch(string(bodyBytes))
+	regex := regexp.MustCompile(`<option[^>]+(?:value="([^"]+)"[^>]+selected="selected"[^>]*|selected="selected"[^>]+value="([^"]+)"[^>]*)>(\S*)<\/option>`)
+	caps := regex.FindSubmatch(bodyBytes)
 
-	// error if didn't find what was expected
-	if len(caps) != 3 {
-		return -1, "", errCurrentCertIdNotFound
+	// len must be 4 ([0] is the entire match)
+	if len(caps) != 4 {
+		return "", "", errCurrentCertIdNotFound
 	}
 
-	// id must be a number
-	id, err = strconv.Atoi(caps[1])
-	if err != nil {
-		return -1, "", errCurrentCertIdNotFound
+	// first capture opportunity for id
+	id = ""
+	if len(caps[1]) != 0 {
+		id = string(caps[1])
+	}
+
+	// second capture opportunity for id
+	if id == "" && len(caps[2]) != 0 {
+		id = string(caps[2])
+	}
+
+	// verify valid id obtained
+	if id == "" {
+		return "", "", errCurrentCertIdNotFound
 	}
 
 	// name will be in html char codes, so unescape it
-	return id, html.UnescapeString(caps[2]), nil
+	return id, html.UnescapeString(string(caps[3])), nil
 }
 
 // SetActiveCert sets the printers active certificate the specified ID and
 // then restarts the printer (to make the new cert active)
-func (p *printer) SetActiveCert(id int) error {
+func (p *printer) SetActiveCert(id string) error {
 	// GET http settings
 	bodyBytes, err := p.getHttpSettings()
 	if err != nil {
@@ -103,7 +112,7 @@ func (p *printer) SetActiveCert(id int) error {
 	data := url.Values{}
 	data.Set("pageid", "326")
 	data.Set("CSRFToken", csrfToken)
-	data.Set("B903", strconv.Itoa(id))
+	data.Set("B903", id)
 	// B91d always seems to be 1, but wasn't needed here
 	// Enable HTTPS for WebUI and IPP
 	data.Set("B86c", "1")

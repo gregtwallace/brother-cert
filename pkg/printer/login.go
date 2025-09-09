@@ -22,8 +22,8 @@ func parsePasswordFieldName(bodyBytes []byte) (fieldName string, err error) {
 	// Look for input elements with type="password"
 	// This regex handles both orders: type first or name first
 	// e.g. <input type="password" name="Baf9" ... /> or <input name="Baf9" type="password" ... />
-	regex := regexp.MustCompile(`<input[^>](?:type="password"[^>]+name="([^"]+)"[^>]+|name="([^"]+)"[^>]+type="password"[^>]+)>`)
-	caps := regex.FindStringSubmatch(string(bodyBytes))
+	regex := regexp.MustCompile(`<input[^>]+(?:type="password"[^>]+name="([^"]+)"[^>]*|name="([^"]+)"[^>]+type="password"[^>]*)>`)
+	caps := regex.FindSubmatch(bodyBytes)
 
 	// error if didn't find what was expected
 	if len(caps) < 2 {
@@ -31,10 +31,10 @@ func parsePasswordFieldName(bodyBytes []byte) (fieldName string, err error) {
 	}
 
 	// return the non-empty capture group (either caps[1] or caps[2])
-	if caps[1] != "" {
-		return caps[1], nil
+	if len(caps[1]) > 0 {
+		return string(caps[1]), nil
 	}
-	return caps[2], nil
+	return string(caps[2]), nil
 }
 
 // login performs the login command against the remote printer. it is

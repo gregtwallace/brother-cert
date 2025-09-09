@@ -59,7 +59,7 @@ func (app *app) cmdInstallCertAndReset(_ context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
-	app.stdLogger.Printf("main: current printer cert is %s (id: %d)", oldCertName, oldCertId)
+	app.stdLogger.Printf("main: current printer cert is %s (id: %s)", oldCertName, oldCertId)
 
 	// install new key/cert
 	app.stdLogger.Println("main: uploading new cert...")
@@ -67,17 +67,17 @@ func (app *app) cmdInstallCertAndReset(_ context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
-	app.stdLogger.Printf("main: new printer cert installed (but not yet activated) (id: %d)", newCertId)
+	app.stdLogger.Printf("main: new printer cert installed (but not yet activated) (id: %s)", newCertId)
 
 	// activate new key/cert
-	app.stdLogger.Printf("main: activating cert (id: %d) and rebooting... please wait 60 seconds...", newCertId)
+	app.stdLogger.Printf("main: activating cert (id: %s) and rebooting... please wait 60 seconds...", newCertId)
 	err = print.SetActiveCert(newCertId)
 	if err != nil {
 		return err
 	}
 
 	// IF deleting old cert (i.e. old id != 0 (0 cant be deleted, its "Preset"))
-	if oldCertId != 0 {
+	if oldCertId != "0" {
 		// wait for reboot to finish
 		time.Sleep(60 * time.Second)
 		app.stdLogger.Printf("main: reboot should be complete")
@@ -93,13 +93,13 @@ func (app *app) cmdInstallCertAndReset(_ context.Context, args []string) error {
 		app.stdLogger.Println("main: reconnected to printer")
 
 		// do delete of old cert
-		app.stdLogger.Printf("main: deleting old cert (id: %d) ...", oldCertId)
+		app.stdLogger.Printf("main: deleting old cert (id: %s) ...", oldCertId)
 		err = print.DeleteCert(oldCertId)
 		if err != nil {
-			return fmt.Errorf("main: failed to delete cert (id: %d) (%w)", oldCertId, err)
+			return fmt.Errorf("main: failed to delete cert (id: %s) (%w)", oldCertId, err)
 		}
 
-		app.stdLogger.Printf("main: old cert (id: %d) deleted", oldCertId)
+		app.stdLogger.Printf("main: old cert (id: %s) deleted", oldCertId)
 	}
 
 	return nil

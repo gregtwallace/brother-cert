@@ -10,14 +10,18 @@ var errCSRFTokenNotFound = errors.New("printer: get: failed to find csrf token")
 // parseBodyForCSRFToken returns the csrfToken contained in the html
 // response input
 func parseBodyForCSRFToken(bodyBytes []byte) (csrfToken string, err error) {
-	// e.g. <id="CSRFToken1 name="CSRFToken" value="xyz"/>`
-	regex := regexp.MustCompile(`id="CSRFToken[0-9]*"\s+name="CSRFToken"\s+value="([^"]*)"/>`)
-	caps := regex.FindStringSubmatch(string(bodyBytes))
+	// e.g. `<input type="hidden" id="CSRFToken" name="CSRFToken" value="JRL[...snip...]bQ=="/>`
+	regex := regexp.MustCompile(`<input[^>]+(?:id="CSRFToken"[^>]+value="([^"]+)"[^>]*|value="([^"]+)"[^>]+id="CSRFToken"[^>]*)>`)
+	caps := regex.FindSubmatch(bodyBytes)
 
-	// error if didn't find what was expected
-	if len(caps) != 2 {
+	// error if wrong length
+	if len(caps) != 3 {
 		return "", errCSRFTokenNotFound
 	}
 
-	return caps[1], nil
+	// return the non-empty capture group (either caps[1] or caps[2])
+	if len(caps[1]) > 0 {
+		return string(caps[1]), nil
+	}
+	return string(caps[2]), nil
 }

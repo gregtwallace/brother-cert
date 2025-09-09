@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -16,11 +15,12 @@ var errCertDeleteInvalidID = errors.New("printer: cant delete cert (invalid id)"
 
 // DeleteCert deletes the certificate with the specified ID from the
 // printer
-func (p *printer) DeleteCert(id int) error {
+func (p *printer) DeleteCert(id string) error {
 	// verify ID actually exists and isn't 0 ('Preset') which isn't valid
-	if id <= 0 {
+	if len(id) <= 0 || id == "0" {
 		return errCertDeleteInvalidID
 	}
+
 	existingIDs, err := p.getCertIDs()
 	if err != nil {
 		return err
@@ -53,7 +53,7 @@ func (p *printer) DeleteCert(id int) error {
 
 	// req query
 	query := req.URL.Query()
-	query.Set("idx", strconv.Itoa(id))
+	query.Set("idx", id)
 	req.URL.RawQuery = query.Encode()
 
 	req.Header.Set("User-Agent", p.userAgent)
@@ -89,7 +89,7 @@ func (p *printer) DeleteCert(id int) error {
 	data.Set("B8ea", "")
 	data.Set("B8fc", "")
 	data.Set("hidden_certificate_process_control", "1")
-	data.Set("hidden_certificate_idx", strconv.Itoa(id))
+	data.Set("hidden_certificate_idx", id)
 
 	// get url & set path
 	u, err = url.ParseRequestURI(p.baseUrl)
@@ -138,7 +138,7 @@ func (p *printer) DeleteCert(id int) error {
 	data.Set("B8ea", "")
 	data.Set("B8eb", "")
 	data.Set("hidden_certificate_process_control", "2")
-	data.Set("hidden_certificate_idx", strconv.Itoa(id))
+	data.Set("hidden_certificate_idx", id)
 
 	// get url & set path
 	u, err = url.ParseRequestURI(p.baseUrl)
