@@ -74,7 +74,7 @@ func certPemToCerts(certPem []byte) (cert *x509.Certificate, certChain []*x509.C
 	// decode 1st cert
 	certPemBlock, rest := pem.Decode(certPem)
 	if certPemBlock == nil {
-		return nil, nil, errors.New("printer: cert pem block did not decode")
+		return nil, nil, errors.New("printer: cert leaf pem block did not decode")
 	}
 
 	// parse 1st cert
@@ -85,14 +85,16 @@ func certPemToCerts(certPem []byte) (cert *x509.Certificate, certChain []*x509.C
 
 	// decode 2nd cert
 	cert2PemBlock, _ := pem.Decode(rest)
-	if certPemBlock == nil {
-		return nil, nil, errors.New("printer: cert pem block did not decode")
+	if cert2PemBlock == nil {
+		// return early: no chain cert
+		return cert, nil, nil
 	}
 
 	// parse 2nd cert
 	cert2, err := x509.ParseCertificate(cert2PemBlock.Bytes)
 	if err != nil {
-		return nil, nil, err
+		// there was a chain cert, but something is wrong with it
+		return nil, nil, errors.New("printer: cert chain pem block did not decode")
 	}
 
 	return cert, []*x509.Certificate{cert2}, nil
