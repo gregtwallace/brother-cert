@@ -8,71 +8,10 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
-	"regexp"
 	"time"
 )
 
-const (
-	urlCertList   = "/net/security/certificate/certificate.html"
-	urlCertImport = "/net/security/certificate/import.html"
-)
-
-var (
-	errCertIDNotFound   = errors.New("printer: get: failed to find cert id")
-	errCertListNotFound = errors.New("printer: get: failed to get list of cert ids currently on printer")
-)
-
-// getCertIDs loads the certificate page and parses it to obtain the
-// IDs of the existing certificates
-func (p *printer) getCertIDs() ([]string, error) {
-	// get url & set path
-	u, err := url.ParseRequestURI(p.baseUrl)
-	if err != nil {
-		return nil, err
-	}
-	u.Path = urlCertList
-
-	// make and do request
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := p.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	// read body of response
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	// OK status?
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("printer: get of certificate list page failed (status code %d)", resp.StatusCode)
-	}
-
-	// parse IDs
-	// e.g. `<td><a href="view.html?idx=58">View</a></td>`
-	regex := regexp.MustCompile(`<a[^>]+href="view\.html\?idx=([^"]+)"[^>]*>`)
-	caps := regex.FindAllSubmatch(bodyBytes, -1)
-
-	// range through matches and get capture group (the actual ID)
-	ids := []string{}
-	for i := range caps {
-		// if match is somehow the wrong length, skip it
-		if len(caps[i]) != 2 {
-			continue
-		}
-
-		ids = append(ids, string(caps[i][1]))
-	}
-
-	return ids, nil
-}
+const urlCertImport = "/net/security/certificate/import.html"
 
 // UploadNewCert converts the specified pem files into p12 format and installs them
 // on the printer. It returns the id value of the newly installed cert.

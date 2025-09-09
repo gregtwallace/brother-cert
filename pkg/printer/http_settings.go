@@ -3,11 +3,9 @@ package printer
 import (
 	"errors"
 	"fmt"
-	"html"
 	"io"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 )
 
@@ -52,47 +50,10 @@ func (p *printer) getHttpSettings() ([]byte, error) {
 	return bodyBytes, nil
 }
 
-// GetCurrentCertID returns the ID integer and name of the currently selected
-// certificate
-func (p *printer) GetCurrentCertID() (id string, name string, err error) {
-	// GET http settings
-	bodyBytes, err := p.getHttpSettings()
-	if err != nil {
-		return "", "", err
-	}
-
-	// find the selected cert in the returned html
-	// e.g. `<option value="3" selected="selected">xxx</option>`
-	regex := regexp.MustCompile(`<option[^>]+(?:value="([^"]+)"[^>]+selected="selected"[^>]*|selected="selected"[^>]+value="([^"]+)"[^>]*)>(\S*)<\/option>`)
-	caps := regex.FindSubmatch(bodyBytes)
-
-	// len must be 4 ([0] is the entire match)
-	if len(caps) != 4 {
-		return "", "", errCurrentCertIdNotFound
-	}
-
-	// first capture opportunity for id
-	id = ""
-	if len(caps[1]) != 0 {
-		id = string(caps[1])
-	}
-
-	// second capture opportunity for id
-	if id == "" && len(caps[2]) != 0 {
-		id = string(caps[2])
-	}
-
-	// verify valid id obtained
-	if id == "" {
-		return "", "", errCurrentCertIdNotFound
-	}
-
-	// name will be in html char codes, so unescape it
-	return id, html.UnescapeString(string(caps[3])), nil
-}
-
 // SetActiveCert sets the printers active certificate the specified ID and
 // then restarts the printer (to make the new cert active)
+// Note: This function even works of the `id` is not in the dropdown box of the printer's
+// cert picker (which happens when the cert does not have a Common Name)
 func (p *printer) SetActiveCert(id string) error {
 	// GET http settings
 	bodyBytes, err := p.getHttpSettings()
