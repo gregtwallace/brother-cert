@@ -2,6 +2,7 @@ package printer
 
 import (
 	"errors"
+	"fmt"
 	"html"
 	"io"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 const urlHttpCertServerSettings = "net/net/certificate/http.html"
 
 var (
-	errGetFailed             = errors.New("printer: get: failed")
 	errCurrentCertIdNotFound = errors.New("printer: get: failed to find current cert id")
 )
 
@@ -46,7 +46,7 @@ func (p *printer) getHttpSettings() ([]byte, error) {
 
 	// OK status?
 	if resp.StatusCode != http.StatusOK {
-		return nil, errGetFailed
+		return nil, fmt.Errorf("printer: get of http settings page failed (status code %d)", resp.StatusCode)
 	}
 
 	return bodyBytes, nil

@@ -52,7 +52,7 @@ func (p *printer) getCertIDs() ([]string, error) {
 
 	// OK status?
 	if resp.StatusCode != http.StatusOK {
-		return nil, errGetFailed
+		return nil, fmt.Errorf("printer: get of certificate list page failed (status code %d)", resp.StatusCode)
 	}
 
 	// parse IDs
@@ -117,7 +117,7 @@ func (p *printer) UploadNewCert(keyPem, certPem []byte) (string, error) {
 
 	// OK status?
 	if resp.StatusCode != http.StatusOK {
-		return "", errGetFailed
+		return "", fmt.Errorf("printer: get of certificate import page failed (status code %d)", resp.StatusCode)
 	}
 
 	// find CSRFToken
@@ -206,7 +206,7 @@ func (p *printer) UploadNewCert(keyPem, certPem []byte) (string, error) {
 
 	// OK status?
 	if resp.StatusCode != http.StatusOK {
-		return "", errGetFailed
+		return "", fmt.Errorf("printer: post of new certificate failed (status code %d)", resp.StatusCode)
 	}
 
 	// normally the webUI would show a waiting screen for ~7 seconds. insert

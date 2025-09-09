@@ -2,6 +2,7 @@ package printer
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -70,7 +71,7 @@ func (p *printer) DeleteCert(id string) error {
 
 	// OK status?
 	if resp.StatusCode != http.StatusOK {
-		return errGetFailed
+		return fmt.Errorf("printer: get of delete page failed (status code %d)", resp.StatusCode)
 	}
 
 	// find CSRFToken
@@ -118,7 +119,7 @@ func (p *printer) DeleteCert(id string) error {
 
 	// OK status?
 	if resp.StatusCode != http.StatusOK {
-		return errGetFailed
+		return fmt.Errorf("printer: get failed (status code %d)", resp.StatusCode)
 	}
 
 	// find CSRFToken
