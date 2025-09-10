@@ -1,7 +1,10 @@
 package app
 
 import (
+	"bytes"
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"runtime"
@@ -53,6 +56,34 @@ func (app *app) cmdInstallCertAndReset(_ context.Context, args []string) error {
 		return err
 	}
 	app.stdLogger.Println("main: connected to printer")
+
+	// if using https, check if the cert we're trying to install is already in use
+	if !useHttp {
+		app.stdLogger.Println("main: checking current printer cert ...")
+		currCert, err := print.GetCurrentLeafCert()
+		if err != nil {
+			return err
+		}
+
+		// decode leaf cert
+		newCertPemBlock, _ := pem.Decode(certPem)
+		if newCertPemBlock == nil {
+			return errors.New("main: failed to decode new leaf cert pem block")
+		}
+
+		// parse 1st cert
+		newCert, err := x509.ParseCertificate(newCertPemBlock.Bytes)
+		if err != nil {
+			return fmt.Errorf("failed to parse new leaf certificate (%s)", err)
+		}
+
+		if bytes.Equal(currCert.SerialNumber.Bytes(), newCert.SerialNumber.Bytes()) {
+			app.stdLogger.Println("main: current printer certificate and new certificate to upload are the same, aborting")
+			return nil
+		}
+	} else {
+		app.stdLogger.Println("main: skipping check of current printer cert (--http flag was set)")
+	}
 
 	// get current ssl cert id
 	oldCertId, oldCertName, err := print.GetCurrentCertID()

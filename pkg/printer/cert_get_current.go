@@ -3,6 +3,7 @@ package printer
 import (
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -202,13 +203,10 @@ func (p *printer) getCurrentCertIDFromHttpSettings() (id string, name string, er
 	return id, html.UnescapeString(string(caps[3])), nil
 }
 
-// getCurrentCertIDFromCertList performs a tls handshake with the printer to retrieve the
-// current SSL cert. Then it compares the cert used in the handshake against the cert list
-// of the printer in order to determine which is active.
-// NOTE: If there is more than one copy of the active cert on the printer (which is possible
-// if you upload the same cert twice), it is not possible to distinguish which is which and
-// only one will be deleted.
-func (p *printer) getCurrentCertIDFromCertList() (id string, err error) {
+// GetCurrentLeafCert() returns the current Certificate that is being used by the
+// printer for SSL connections. This is achieved by performing a TLS handshake
+// with the printer
+func (p *printer) GetCurrentLeafCert() (*x509.Certificate, error) {
 	// use tls handshake to get the serial of the active certificate
 	conf := &tls.Config{
 		InsecureSkipVerify: true,
@@ -216,15 +214,30 @@ func (p *printer) getCurrentCertIDFromCertList() (id string, err error) {
 
 	conn, err := tls.Dial("tcp", strings.TrimPrefix(p.baseUrl, "https://")+":443", conf)
 	if err != nil {
-		return "", fmt.Errorf("printer: failed to get current cert id from cert list (dial failed: %s)", err)
+		return nil, fmt.Errorf("printer: failed to perform tls handshake with printer (dial failed: %s)", err)
 	}
 	defer conn.Close()
 
 	certs := conn.ConnectionState().PeerCertificates
 	if len(certs) <= 0 {
-		return "", errors.New("printer: failed to get ssl cert from printer")
+		return nil, errors.New("printer: failed to get ssl cert from printer")
 	}
-	leafCert := certs[0]
+
+	return certs[0], nil
+}
+
+// getCurrentCertIDFromCertList performs a tls handshake with the printer to retrieve the
+// current SSL cert. Then it compares the cert used in the handshake against the cert list
+// of the printer in order to determine which is active.
+// NOTE: If there is more than one copy of the active cert on the printer (which is possible
+// if you upload the same cert twice), it is not possible to distinguish which is which and
+// only one will be deleted.
+func (p *printer) getCurrentCertIDFromCertList() (id string, err error) {
+	// get currently in use cert
+	leafCert, err := p.GetCurrentLeafCert()
+	if err != nil {
+		return "", err
+	}
 
 	// get the list of all certs on the printer
 	printerCertIDs, err := p.getCertIDs()
