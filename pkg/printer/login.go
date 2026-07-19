@@ -2,6 +2,7 @@ package printer
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -40,7 +41,7 @@ func parsePasswordFieldName(bodyBytes []byte) (fieldName string, err error) {
 // login performs the login command against the remote printer. it is
 // used internally as part of the printer creation process to ensure
 // credentials are valid
-func (p *printer) login(password string) error {
+func (p *printer) formLogin(password string) error {
 	// get url & set path
 	u, err := url.ParseRequestURI(p.baseUrl)
 	if err != nil {
@@ -59,6 +60,10 @@ func (p *printer) login(password string) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Failed to get login page: %d", resp.StatusCode)
+	}
 
 	// read the login page HTML
 	bodyBytes, err := io.ReadAll(resp.Body)
@@ -110,4 +115,80 @@ func (p *printer) login(password string) error {
 	p.httpClient.Jar.SetCookies(u, resp.Cookies())
 
 	return nil
+}
+
+func (p *printer) xhrLogin(password string) error {
+	u, err := url.ParseRequestURI(p.baseUrl)
+	if err != nil {
+		return err
+	}
+
+	u.Path = "/EWS/home/status.html"
+
+	// first, fetch the login page to establish a session
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Failed to get login page: %d", resp.StatusCode)
+	}
+
+	// set cookies in jar
+	p.httpClient.Jar.SetCookies(u, resp.Cookies())
+
+	_, _ = io.Copy(io.Discard, resp.Body)
+
+	body := "PASS=" + strings.ReplaceAll(password, "&", "&amp;") + "&&Admin_Password_Save"
+
+	u.Path = "/auth/login"
+	req, err = http.NewRequest(http.MethodPost, u.String(), strings.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("login: failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err = p.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("login: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// read and discard entire body (should be empty)
+	bodyBytes, err := io.ReadAll(resp.Body)
+
+	switch resp.StatusCode {
+	case 200:
+		break
+	case 403:
+		return fmt.Errorf("login: account locked (403)")
+	default:
+		return fmt.Errorf("login: authentication failed (%d)", resp.StatusCode)
+	}
+
+	_, _ = io.Copy(io.Discard, resp.Body)
+
+	// set cookies in jar
+	p.httpClient.Jar.SetCookies(u, resp.Cookies())
+
+	return nil
+}
+
+// login performs the login command against the remote printer. it is
+// used internally as part of the printer creation process to ensure
+// credentials are valid
+func (p *printer) login(password string) error {
+	err := p.formLogin(password)
+	if err == nil {
+		return nil
+	}
+
+	return p.xhrLogin(password)
 }
